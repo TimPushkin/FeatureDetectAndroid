@@ -15,4 +15,5 @@ def save_model_for_mobile(model_class, state_dict_path, filename):
 
 
 # Save SuperPoint
-save_model_for_mobile(SuperPointNet, "external/superpoint/superpoint_v1.pth", "superpoint.ptl")
+save_model_for_mobile(SuperPointNet, "external/superpoint/superpoint_v1.pth",
+                      "../app/src/main/assets/superpoint.ptl")

@@ -24,16 +24,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import me.timpushkin.pytorchtest.ui.theme.PyTorchTestTheme
 import java.io.File
 
-private const val MODEL_ASSET = "model.ptl"
+private const val MODEL_ASSET = "superpoint.ptl"
 private const val IMAGE_ASSET = "image.png"
 
 class MainActivity : ComponentActivity() {
-    private lateinit var mModelWrapper: ModelWrapper
+    private lateinit var mSuperPointNet: SuperPointNet
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mModelWrapper = ModelWrapper(assetFilePath(MODEL_ASSET))
+        mSuperPointNet = SuperPointNet(assetFilePath(MODEL_ASSET))
         val image = BitmapFactory.decodeStream(assets.open(IMAGE_ASSET))
 
         setContent {
@@ -77,9 +77,9 @@ class MainActivity : ComponentActivity() {
 
     private fun runTest(image: Bitmap): Pair<String, Long> {
         val startTimeNanos = SystemClock.elapsedRealtimeNanos()
-        val scores = mModelWrapper.calcScores(image)
+        val (keypointsShape, descriptorsShape) = mSuperPointNet.forward(image)
         val calcTimeNanos = SystemClock.elapsedRealtimeNanos() - startTimeNanos
-        val name = mModelWrapper.scoresToName(scores)
-        return name to calcTimeNanos
+        return "Keypoints tensor shape: ${keypointsShape.joinToString()}.\n" +
+                "Descriptors tensor shape: ${descriptorsShape.joinToString()}" to calcTimeNanos
     }
 }
