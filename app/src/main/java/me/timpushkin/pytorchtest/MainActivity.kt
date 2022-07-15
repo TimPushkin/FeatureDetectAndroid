@@ -77,9 +77,12 @@ class MainActivity : ComponentActivity() {
 
     private fun runTest(image: Bitmap): Pair<String, Long> {
         val startTimeNanos = SystemClock.elapsedRealtimeNanos()
-        val (keypointsShape, descriptorsShape) = mSuperPointNet.forward(image)
+        val (keyPoints, descriptors) = mSuperPointNet.forward(image)
         val calcTimeNanos = SystemClock.elapsedRealtimeNanos() - startTimeNanos
-        return "Keypoints tensor shape: ${keypointsShape.joinToString()}.\n" +
-                "Descriptors tensor shape: ${descriptorsShape.joinToString()}" to calcTimeNanos
+        return "Key points tensor shape: " +
+                "${keyPoints.size}x${keyPoints[0].size}x${keyPoints[0][0].size}.\n" +
+                "Descriptors tensor shape: " +
+                "${descriptors.size}x${descriptors[0].size}x${descriptors[0][0].size}" to
+                calcTimeNanos
     }
 }

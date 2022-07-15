@@ -16,7 +16,7 @@ private const val OUTPUT_SIZE = 2
 class SuperPointNet(modelPath: String) {
     private val module = LiteModuleLoader.load(modelPath)
 
-    fun forward(image: Bitmap): Pair<LongArray, LongArray> {
+    fun forward(image: Bitmap): Pair<List<List<List<Float>>>, List<List<List<Float>>>> {
         val height = image.height.toLong()
         val width = image.width.toLong()
 
@@ -34,12 +34,13 @@ class SuperPointNet(modelPath: String) {
             )
         }
 
-        val keypoints = output[0].toTensor()
-        val descriptors = output[1].toTensor()
+        val semiKeyPointsTensor = output[0].toTensor()
+        val coarseDescriptorsTensor = output[1].toTensor()
 
-        // TODO: convert tensors to multi-dimensional float arrays
+        val semiKeyPoints = outputTensorToList(semiKeyPointsTensor)
+        val coarseDescriptors = outputTensorToList(coarseDescriptorsTensor)
 
-        return keypoints.shape() to descriptors.shape()
+        return semiKeyPoints to coarseDescriptors
     }
 
     private fun Bitmap.toGrayscaleArray(): FloatArray {
@@ -58,4 +59,29 @@ class SuperPointNet(modelPath: String) {
 
     private fun linearizeSrgbChannel(value: Float): Float =
         if (value <= 0.04045) value / 12.92f else ((value + 0.055f) / 1.055f).pow(2.4f)
+
+    /**
+     * Transforms tensor of shape 1xDxHxW to list with dimensions WxHxD according to the following
+     * rule:
+     * ```
+     * result[x][y][d] == tensor[0][d][y][x]
+     * ```
+     */
+    private fun outputTensorToList(tensor: Tensor): List<List<List<Float>>> {
+        val data = tensor.dataAsFloatArray
+        val (len1, len2, len3) = tensor
+            .shape()
+            .asList()
+            .subList(1, 4) // strip redundant first dimension
+            .map { it.toInt() }
+        val list =
+            List(len3) { k ->
+                List(len2) { j ->
+                    List(len1) { i ->
+                        data[i * (len2 * len3) + j * (len3) + k]
+                    }
+                }
+            }
+        return list
+    }
 }
