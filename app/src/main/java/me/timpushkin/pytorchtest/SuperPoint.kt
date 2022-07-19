@@ -11,10 +11,9 @@ import kotlin.math.pow
 
 private const val TAG = "SuperPointNet"
 
-private const val OUTPUT_SIZE = 2
-
-class SuperPointNet(modelPath: String) {
-    private val module = LiteModuleLoader.load(modelPath)
+class SuperPoint(modelPath: String, decoderPath: String) {
+    private val mNet = LiteModuleLoader.load(modelPath)
+    private val mDecoder = LiteModuleLoader.load(decoderPath)
 
     fun forward(image: Bitmap): Pair<List<List<List<Float>>>, List<List<List<Float>>>> {
         val height = image.height.toLong()
@@ -22,25 +21,17 @@ class SuperPointNet(modelPath: String) {
 
         val input = Tensor.fromBlob(image.toGrayscaleArray(), longArrayOf(1, 1, height, width))
 
-        val startTimeNanos = SystemClock.elapsedRealtimeNanos()
-        val rawOutput = module.forward(IValue.from(input))
-        val calcTimeNanos = SystemClock.elapsedRealtimeNanos() - startTimeNanos
-        Log.i(TAG, "Model's calculation time: ${calcTimeNanos * 1e-9} sec")
+        val output = runTimed("SuperPoint's calculation time") {
+            mNet.forward(IValue.from(input))
+        }.toTuple()
+        val decoded = runTimed("Decoder's calculation time") {
+            mDecoder.forward(output[0], output[1], IValue.from(height), IValue.from(width))
+        }.toTuple()
 
-        val output = rawOutput.toTuple()
-        if (output.size != OUTPUT_SIZE) {
-            throw IllegalStateException(
-                "Expected $OUTPUT_SIZE tensors in output, but was ${output.size}"
-            )
-        }
+        val keyPoints = outputTensorToList(decoded[0].toTensor())
+        val descriptors = outputTensorToList(decoded[1].toTensor())
 
-        val semiKeyPointsTensor = output[0].toTensor()
-        val coarseDescriptorsTensor = output[1].toTensor()
-
-        val semiKeyPoints = outputTensorToList(semiKeyPointsTensor)
-        val coarseDescriptors = outputTensorToList(coarseDescriptorsTensor)
-
-        return semiKeyPoints to coarseDescriptors
+        return keyPoints to descriptors
     }
 
     private fun Bitmap.toGrayscaleArray(): FloatArray {
@@ -59,6 +50,14 @@ class SuperPointNet(modelPath: String) {
 
     private fun linearizeSrgbChannel(value: Float): Float =
         if (value <= 0.04045) value / 12.92f else ((value + 0.055f) / 1.055f).pow(2.4f)
+
+    private fun <T> runTimed(log: String, task: () -> T): T {
+        val startTimeNanos = SystemClock.elapsedRealtimeNanos()
+        val result = task()
+        val calcTimeNanos = SystemClock.elapsedRealtimeNanos() - startTimeNanos
+        Log.i(TAG, "$log: ${calcTimeNanos * 1e-9} sec")
+        return result
+    }
 
     /**
      * Transforms tensor of shape 1xDxHxW to list with dimensions WxHxD according to the following

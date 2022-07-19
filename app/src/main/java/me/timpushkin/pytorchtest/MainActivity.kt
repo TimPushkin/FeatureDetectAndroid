@@ -25,15 +25,16 @@ import me.timpushkin.pytorchtest.ui.theme.PyTorchTestTheme
 import java.io.File
 
 private const val MODEL_ASSET = "superpoint.ptl"
+private const val DECODER_ASSET = "superpoint_decoder.ptl"
 private const val IMAGE_ASSET = "image.png"
 
 class MainActivity : ComponentActivity() {
-    private lateinit var mSuperPointNet: SuperPointNet
+    private lateinit var mSuperPointNet: SuperPoint
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mSuperPointNet = SuperPointNet(assetFilePath(MODEL_ASSET))
+        mSuperPointNet = SuperPoint(assetFilePath(MODEL_ASSET), assetFilePath(DECODER_ASSET))
         val image = BitmapFactory.decodeStream(assets.open(IMAGE_ASSET))
 
         setContent {
