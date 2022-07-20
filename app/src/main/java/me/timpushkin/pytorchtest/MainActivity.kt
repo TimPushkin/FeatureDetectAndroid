@@ -6,10 +6,13 @@ import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -20,7 +23,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalDensity
 import me.timpushkin.pytorchtest.ui.theme.PyTorchTestTheme
 import java.io.File
 
@@ -47,21 +54,44 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        var result by rememberSaveable { mutableStateOf<Pair<String, Long>?>(null) }
+                        var keyPoints by rememberSaveable { mutableStateOf<List<Offset>?>(null) }
+                        var calcTimeNanos by rememberSaveable { mutableStateOf<Long?>(null) }
 
-                        Image(
-                            bitmap = image.asImageBitmap(),
-                            contentDescription = "Image"
-                        )
+                        Box {
+                            Image(
+                                bitmap = image.asImageBitmap(),
+                                contentDescription = "Image"
+                            )
 
-                        result?.let { (name, timeNanos) ->
+                            val (width, height) = with(LocalDensity.current) {
+                                image.width.toDp() to image.height.toDp()
+                            }
+
+                            keyPoints?.let { points ->
+                                Canvas(modifier = Modifier.size(width, height)) {
+                                    drawPoints(
+                                        points = points,
+                                        pointMode = PointMode.Points,
+                                        color = Color.Green,
+                                        strokeWidth = 10f
+                                    )
+                                }
+                            }
+                        }
+
+                        calcTimeNanos?.let { timeNanos ->
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(text = name)
                                 Text(text = "${timeNanos * 1e-9} sec")
                             }
                         }
 
-                        Button(onClick = { result = runTest(image) }) {
+                        Button(
+                            onClick = {
+                                val (points, time) = calcKeyPoints(image)
+                                keyPoints = points
+                                calcTimeNanos = time
+                            }
+                        ) {
                             Text(text = "Run")
                         }
                     }
@@ -76,14 +106,10 @@ class MainActivity : ComponentActivity() {
         return file.absolutePath
     }
 
-    private fun runTest(image: Bitmap): Pair<String, Long> {
+    private fun calcKeyPoints(image: Bitmap): Pair<List<Offset>, Long> {
         val startTimeNanos = SystemClock.elapsedRealtimeNanos()
-        val (keyPoints, descriptors) = mSuperPointNet.forward(image)
+        val (keyPoints, _) = mSuperPointNet.forward(image)
         val calcTimeNanos = SystemClock.elapsedRealtimeNanos() - startTimeNanos
-        return "Key points tensor shape: " +
-                "${keyPoints.size}x${keyPoints[0].size}.\n" +
-                "Descriptors tensor shape: " +
-                "${descriptors.size}x${descriptors[0].size}" to
-                calcTimeNanos
+        return keyPoints.map { (x, y, _) -> Offset(x, y) } to calcTimeNanos
     }
 }
