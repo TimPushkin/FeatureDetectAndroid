@@ -15,7 +15,7 @@ class SuperPoint(modelPath: String, decoderPath: String) {
     private val mNet = LiteModuleLoader.load(modelPath)
     private val mDecoder = LiteModuleLoader.load(decoderPath)
 
-    fun forward(image: Bitmap): Pair<List<List<List<Float>>>, List<List<List<Float>>>> {
+    fun forward(image: Bitmap): Pair<List<List<Float>>, List<List<Float>>> {
         val height = image.height.toLong()
         val width = image.width.toLong()
 
@@ -28,8 +28,8 @@ class SuperPoint(modelPath: String, decoderPath: String) {
             mDecoder.forward(output[0], output[1], IValue.from(height), IValue.from(width))
         }.toTuple()
 
-        val keyPoints = outputTensorToList(decoded[0].toTensor())
-        val descriptors = outputTensorToList(decoded[1].toTensor())
+        val keyPoints = transposeToList(decoded[0].toTensor())
+        val descriptors = transposeToList(decoded[1].toTensor())
 
         return keyPoints to descriptors
     }
@@ -59,26 +59,13 @@ class SuperPoint(modelPath: String, decoderPath: String) {
         return result
     }
 
-    /**
-     * Transforms tensor of shape 1xDxHxW to list with dimensions WxHxD according to the following
-     * rule:
-     * ```
-     * result[x][y][d] == tensor[0][d][y][x]
-     * ```
-     */
-    private fun outputTensorToList(tensor: Tensor): List<List<List<Float>>> {
+    private fun transposeToList(tensor: Tensor): List<List<Float>> {
         val data = tensor.dataAsFloatArray
-        val (len1, len2, len3) = tensor
-            .shape()
-            .asList()
-            .subList(1, 4) // strip redundant first dimension
-            .map { it.toInt() }
+        val (len1, len2) = tensor.shape().map { it.toInt() }
         val list =
-            List(len3) { k ->
-                List(len2) { j ->
-                    List(len1) { i ->
-                        data[i * (len2 * len3) + j * (len3) + k]
-                    }
+            List(len2) { j ->
+                List(len1) { i ->
+                    data[i * len2 + j]
                 }
             }
         return list

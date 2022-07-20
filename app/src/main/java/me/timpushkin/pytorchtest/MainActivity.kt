@@ -81,9 +81,9 @@ class MainActivity : ComponentActivity() {
         val (keyPoints, descriptors) = mSuperPointNet.forward(image)
         val calcTimeNanos = SystemClock.elapsedRealtimeNanos() - startTimeNanos
         return "Key points tensor shape: " +
-                "${keyPoints.size}x${keyPoints[0].size}x${keyPoints[0][0].size}.\n" +
+                "${keyPoints.size}x${keyPoints[0].size}.\n" +
                 "Descriptors tensor shape: " +
-                "${descriptors.size}x${descriptors[0].size}x${descriptors[0][0].size}" to
+                "${descriptors.size}x${descriptors[0].size}" to
                 calcTimeNanos
     }
 }
