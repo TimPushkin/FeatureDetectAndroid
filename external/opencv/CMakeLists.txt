@@ -1,7 +1,10 @@
 message(STATUS "Configuring OpenCV")
 
 set(OPENCV_VERSION 4.6.0)
-set(OPENCV_PUBLIC_LIBRARIES opencv_core opencv_calib3d opencv_imgproc opencv_imgcodecs opencv_features2d opencv_highgui)
+set(
+        OPENCV_PUBLIC_LIBRARIES
+        opencv_core opencv_calib3d opencv_imgproc opencv_imgcodecs opencv_features2d opencv_highgui opencv_xfeatures2d
+)
 # set(OPENCV_PRIVATE_LIBRARIES  )               TODO: research which modules we don't use
 
 get_filename_component(OPENCV_BUILD_DIRS_ROOT ../../build REALPATH)

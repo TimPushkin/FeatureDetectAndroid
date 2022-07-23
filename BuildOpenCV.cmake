@@ -2,7 +2,7 @@ set(PROJECT_BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 
 set(OPENCV_VERSION 4.6.0)
 # TODO: remove unused modules
-set(OPENCV_MODULES core,calib3d,imgproc,imgcodecs,features2d,highgui)
+set(OPENCV_MODULES core,calib3d,imgproc,imgcodecs,features2d,highgui,xfeatures2d)
 
 set(OPENCV_DOWNLOAD_DIR ${PROJECT_BUILD_DIR}/opencv-download)
 set(OPENCV_BUILD_DIR ${PROJECT_BUILD_DIR}/opencv-build)
@@ -16,26 +16,54 @@ endif ()
 if (NOT EXISTS ${OPENCV_DOWNLOAD_DIR}/opencv-${OPENCV_VERSION}/CMakeLists.txt)
     message(STATUS "OpenCV not extracted into ${OPENCV_DOWNLOAD_DIR}")
 
-    if (NOT EXISTS ${OPENCV_DOWNLOAD_DIR}/${OPENCV_VERSION}.zip)
+    if (NOT EXISTS ${OPENCV_DOWNLOAD_DIR}/opencv-${OPENCV_VERSION}.zip)
         message(STATUS "OpenCV not downloaded into ${OPENCV_DOWNLOAD_DIR}")
 
         message(STATUS "Downloading OpenCV")
         file(
                 DOWNLOAD
                 https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.zip
-                ${OPENCV_DOWNLOAD_DIR}/${OPENCV_VERSION}.zip
+                ${OPENCV_DOWNLOAD_DIR}/opencv-${OPENCV_VERSION}.zip
                 SHOW_PROGRESS
         )
         message(STATUS "Downloading OpenCV - done")
+
     endif ()
 
     message(STATUS "Extracting OpenCV")
     file(
             ARCHIVE_EXTRACT
-            INPUT ${OPENCV_DOWNLOAD_DIR}/${OPENCV_VERSION}.zip
+            INPUT ${OPENCV_DOWNLOAD_DIR}/opencv-${OPENCV_VERSION}.zip
             DESTINATION ${OPENCV_DOWNLOAD_DIR}
     )
     message(STATUS "Extracting OpenCV - done")
+endif ()
+
+# Download and extract OpenCV-contrib sources
+if (NOT EXISTS ${OPENCV_DOWNLOAD_DIR}/opencv-extra-${OPENCV_VERSION})
+    message(STATUS "OpenCV extra not extracted into ${OPENCV_DOWNLOAD_DIR}")
+
+    if (NOT EXISTS ${OPENCV_DOWNLOAD_DIR}/opencv-extra-${OPENCV_VERSION}.zip)
+        message(STATUS "OpenCV extra not downloaded into ${OPENCV_DOWNLOAD_DIR}")
+
+        message(STATUS "Downloading OpenCV extra")
+        file(
+                DOWNLOAD
+                https://github.com/opencv/opencv_contrib/archive/refs/tags/${OPENCV_VERSION}.zip
+                ${OPENCV_DOWNLOAD_DIR}/opencv-extra-${OPENCV_VERSION}.zip
+                SHOW_PROGRESS
+        )
+        message(STATUS "Downloading OpenCV extra - done")
+
+    endif ()
+
+    message(STATUS "Extracting OpenCV extra")
+    file(
+            ARCHIVE_EXTRACT
+            INPUT ${OPENCV_DOWNLOAD_DIR}/opencv-extra-${OPENCV_VERSION}.zip
+            DESTINATION ${OPENCV_DOWNLOAD_DIR}
+    )
+    message(STATUS "Extracting OpenCV extra - done")
 endif ()
 
 # Set toolchain-related flags
@@ -65,6 +93,8 @@ set(
         OPENCV_CMAKE_ARGS  # https://docs.opencv.org/4.6.0/db/d05/tutorial_config_reference.html
         # General
         -DBUILD_LIST=${OPENCV_MODULES}
+        -DOPENCV_EXTRA_MODULES_PATH=${OPENCV_DOWNLOAD_DIR}/opencv_contrib-${OPENCV_VERSION}/modules
+        -D OPENCV_ENABLE_NONFREE=ON
         # Bundled components              TODO: disable the unwanted dependencies(1)
         #        -DWITH_GTK=OFF
         #        -DBUILD_TESTS=OFF

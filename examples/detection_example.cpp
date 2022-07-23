@@ -10,6 +10,19 @@ std::vector<uint8_t> matToVector(const cv::Mat &mat) {
   return result;
 }
 
+void printOutput(const featurelib::DetectionResult &output){
+  std::cout << "Printing points" << std::endl;
+  for (auto &kp : output.keypoints) {
+    std::cout << kp.x << "\t" << kp.y << "\t" << kp.size << "\t" << kp.angle << "\t" << kp.strength << std::endl;
+  }
+
+  std::cout << "Printing descriptors" << std::endl;
+  for (const auto &row : output.descriptors) {
+    for (const auto &element : row) std::cout << element << ' ';
+    std::cout << std::endl;
+  }
+}
+
 // Calculates key points and image descriptors
 // Takes an image file path as input
 // Prints key points and image descriptors to stdout
@@ -27,19 +40,17 @@ int main(int argc, char *argv[]) {
 
   std::vector<uint8_t> image_data = matToVector(img);
 
-  featurelib::SiftDetector detector(width, height);
+  featurelib::SiftDetector sift_detector(width, height);
+  featurelib::DetectionResult sift_output = sift_detector.detect(image_data);
 
-  featurelib::DetectionResult output = detector.detect(image_data);
+  featurelib::OrbDetector orb_detector(width, height);
+  featurelib::DetectionResult orb_output = orb_detector.detect(image_data);
 
-  std::cout << "Printing points" << std::endl;
-  for (auto &kp : output.keypoints) {
-    std::cout << kp.x << "\t" << kp.y << "\t" << kp.size << "\t" << kp.angle << "\t" << kp.strength << std::endl;
-  }
+  featurelib::SurfDetector surf_detector(width, height);
+  featurelib::DetectionResult surf_output = surf_detector.detect(image_data);
 
-  std::cout << "Printing descriptors" << std::endl;
-  for (const auto &row : output.descriptors) {
-    for (const auto &element : row) std::cout << element << ' ';
-    std::cout << std::endl;
-  }
+  printOutput(sift_output);
+  printOutput(orb_output);
+  printOutput(surf_output);
   return 0;
 }

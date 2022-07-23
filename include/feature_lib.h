@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <opencv2/features2d.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 namespace featurelib {
 
@@ -49,6 +50,26 @@ class SiftDetector : public FeatureDetector {
 
  private:
   cv::Ptr<cv::Feature2D> sift_ = cv::SIFT::create();
+};
+
+class OrbDetector : public FeatureDetector {
+ public:
+  OrbDetector(int width, int height);
+
+  DetectionResult detect(const std::vector<std::uint8_t> &input) const override;
+
+ private:
+  cv::Ptr<cv::Feature2D> orb_ = cv::ORB::create();
+};
+
+class SurfDetector : public FeatureDetector {
+ public:
+  SurfDetector(int width, int height);
+
+  DetectionResult detect(const std::vector<std::uint8_t> &input) const override;
+
+ private:
+  cv::Ptr<cv::Feature2D> surf_ = cv::xfeatures2d::SURF::create();
 };
 
 } // namespace featurelib
